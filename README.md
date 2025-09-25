@@ -54,67 +54,111 @@ Stock returns are downloaded via yfinance (e.g., AAPL 2023). Preprocessing inclu
 
 ### Key Algorithms Applied
 
-The scripts implement established mathematical and statistical algorithms for distribution modeling, generative learning, and risk analysis. Key equations are provided below for clarity.
+The scripts implement established mathematical and statistical algorithms for distribution modeling, generative learning, and risk analysis. Key equations are provided below in LaTeX format for clarity and precision. These are rendered on GitHub using MathJax.
 
 #### Statistical Distribution Fitting and Comparison
-- **Classical Distributions**: Fitting of normal, Student's t, Laplace, Cauchy, gamma, lognormal using SciPy.stats (e.g., `stats.norm.fit()`, `stats.t.fit()`) and Fitter library for automatic selection based on AIC/BIC criteria. For example, the Student's t-distribution PDF is:
+- **Classical Distributions**: Fitting of normal, Student's t, Laplace, Cauchy, gamma, lognormal using SciPy.stats (e.g., `stats.norm.fit()`, `stats.t.fit()`) and Fitter library for automatic selection based on AIC/BIC criteria. For example, the Student's t-distribution probability density function (PDF) is:
 
-  $$ f(x | \nu, \mu, \sigma) = \frac{\Gamma\left(\frac{\nu+1}{2}\right)}{\sqrt{\nu\pi} \sigma \Gamma\left(\frac{\nu}{2}\right)} \left(1 + \frac{(x - \mu)^2}{\nu \sigma^2}\right)^{-\frac{\nu+1}{2}} $$
+  $$
+  f(x \mid \nu, \mu, \sigma) = \frac{\Gamma\left(\frac{\nu+1}{2}\right)}{\sqrt{\nu \pi} \, \sigma \, \Gamma\left(\frac{\nu}{2}\right)} \left(1 + \frac{(x - \mu)^2}{\nu \sigma^2}\right)^{-\frac{\nu+1}{2}}
+  $$
 
-  where \(\nu\) is degrees of freedom, \(\mu\) location, \(\sigma\) scale.
+  where \(\nu\) is the degrees of freedom, \(\mu\) is the location parameter, and \(\sigma\) is the scale parameter.
 
-- **Kolmogorov-Smirnov (KS) Test**: `scipy.stats.kstest()` to compare empirical CDFs of real vs. synthetic data for goodness-of-fit. The test statistic is:
+- **Kolmogorov-Smirnov (KS) Test**: `scipy.stats.kstest()` to compare empirical cumulative distribution functions (CDFs) of real vs. synthetic data for goodness-of-fit. The test statistic is the maximum deviation:
 
-  $$ D = \sup_x |F_n(x) - F(x)| $$
+  $$
+  D = \sup_x |F_n(x) - F(x)|
+  $$
 
-  where \(F_n\) is the empirical CDF, \(F\) the theoretical CDF.
+  where \(F_n(x)\) is the empirical CDF from the sample, and \(F(x)\) is the theoretical CDF.
 
-- **Kullback-Leibler (KL) Divergence**: Histogram-based estimation (`np.sum(hist_real * np.log(hist_real / hist_vae))`) to measure distribution similarity:
+- **Kullback-Leibler (KL) Divergence**: Histogram-based estimation (`np.sum(hist_real * np.log(hist_real / hist_vae))`) to measure how much one probability distribution differs from another:
 
-  $$ D_{KL}(P || Q) = \sum_i P(i) \log \frac{P(i)}{Q(i)} $$
+  $$
+  D_{\text{KL}}(P \parallel Q) = \sum_i P(i) \log \frac{P(i)}{Q(i)}
+  $$
 
-- **Jensen-Shannon Divergence (JSD)**: `scipy.spatial.distance.jensenshannon()` for symmetric, bounded divergence [0,1]:
+  (for discrete distributions; integrated for continuous).
 
-  $$ JSD(P || Q) = \frac{1}{2} D_{KL}(P || M) + \frac{1}{2} D_{KL}(Q || M), \quad M = \frac{P + Q}{2} $$
+- **Jensen-Shannon Divergence (JSD)**: `scipy.spatial.distance.jensenshannon()` for a symmetric, bounded measure of divergence [0,1]:
 
-- **Empirical CDF**: Interpolated using `scipy.interpolate.interp1d` for non-parametric comparisons.
+  $$
+  \text{JSD}(P \parallel Q) = \frac{1}{2} D_{\text{KL}}(P \parallel M) + \frac{1}{2} D_{\text{KL}}(Q \parallel M), \quad M = \frac{P + Q}{2}
+  $$
+
+- **Empirical CDF**: Interpolated using `scipy.interpolate.interp1d` for non-parametric comparisons of distributions without assuming a form.
 
 #### Generative Modeling (VAE)
-- **Variational Autoencoder (VAE) Loss**: Evidence Lower Bound (ELBO) = Reconstruction Loss + KL Divergence. Reconstruction uses Gaussian Negative Log-Likelihood (simplified to MSE in code):
+- **Variational Autoencoder (VAE) Loss**: The Evidence Lower Bound (ELBO) objective, which lower-bounds the log-likelihood. It consists of reconstruction loss + KL divergence. Reconstruction uses Gaussian Negative Log-Likelihood (simplified to mean squared error (MSE) in code assuming unit variance):
 
-  $$ \mathcal{L}_{recon} = \frac{1}{2} \sum (x - \hat{x})^2 $$
+  $$
+  \mathcal{L}_{\text{recon}} = \frac{1}{2} \sum_{i=1}^N (x_i - \hat{x}_i)^2
+  $$
 
-  KL term (standard Gaussian prior):
+  The KL divergence term (for standard Gaussian prior \(p(z) = \mathcal{N}(0, I)\)):
 
-  $$ D_{KL}(q(z|x) || p(z)) = - \frac{1}{2} \sum (1 + \log \sigma^2 - \mu^2 - \sigma^2) $$
+  $$
+  D_{\text{KL}}(q(z|x) \parallel p(z)) = -\frac{1}{2} \sum_{j=1}^J \left(1 + \log \sigma_j^2 - \mu_j^2 - \sigma_j^2 \right)
+  $$
 
-  Total ELBO: \(\mathcal{L} = \mathcal{L}_{recon} - \beta D_{KL}\), with \(\beta\) for Beta-VAE.
+  Total ELBO loss: 
 
-- **Reparameterization Trick**: mu + eps * std (where eps ~ N(0,1)) for differentiable sampling from N(mu, sigma):
+  $$
+  \mathcal{L} = \mathcal{L}_{\text{recon}} - \beta \, D_{\text{KL}}
+  $$
 
-  $$ z = \mu + \sigma \odot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I) $$
+  where \(\beta\) controls the trade-off in Beta-VAE.
 
-- **Beta-VAE and KL Annealing**: Weighted KL term (\(\beta \cdot D_{KL}\)) with linear annealing: \(w_t = \min(1, t / T)\) for epoch \(t\), total epochs \(T\).
+- **Reparameterization Trick**: Enables backpropagation through stochastic sampling by reparameterizing the latent variable:
 
-- **Heavy-Tailed Priors**: Student-t or Levy-stable distributions in latent space (enhanced_vae.py) to model fat tails, modifying the KL term to \(D_{KL}(q(z|x) || p(z))\) with non-Gaussian \(p(z)\).
+  $$
+  z = \mu + \sigma \odot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+  $$
+
+  where \(\odot\) denotes element-wise multiplication.
+
+- **Beta-VAE and KL Annealing**: The KL term is weighted by \(\beta\) and annealed linearly over epochs: \(w_t = \min(1, t / T)\) for epoch \(t\) out of total epochs \(T\), to stabilize training and encourage disentanglement.
+
+- **Heavy-Tailed Priors**: In `enhanced_vae.py`, the prior \(p(z)\) is replaced with Student-t or Lévy-stable distributions to better model fat tails, modifying the KL term to:
+
+  $$
+  D_{\text{KL}}(q(z|x) \parallel p(z))
+  $$
+
+  with non-Gaussian \(p(z)\) (e.g., Student-t PDF as above).
 
 #### Risk and Financial Metrics
-- **Value at Risk (VaR)**: Empirical percentile (`np.percentile(returns, 5)`) at 95%/99% confidence levels (\(\alpha = 0.05/0.01\)):
+- **Value at Risk (VaR)**: Empirical percentile calculation (`np.percentile(returns, 5)`) at confidence levels \(\alpha = 0.05\) (95%) or 0.01 (99%):
 
-  $$ VaR_\alpha = \inf \{ x \mid P(X \leq x) \geq \alpha \} $$
+  $$
+  \text{VaR}_\alpha = \inf \left\{ x \mid P(X \leq x) \geq \alpha \right\}
+  $$
 
-- **Expected Shortfall (ES)**: Mean of returns below the VaR threshold:
+  representing the loss threshold exceeded with probability \(\alpha\).
 
-  $$ ES_\alpha = \mathbb{E}[X | X \leq VaR_\alpha] $$
+- **Expected Shortfall (ES)**: The conditional expected loss beyond VaR:
 
-- **Historical Simulation**: Non-parametric resampling for hybrid_model.py to handle extreme tails, drawing from empirical distribution.
+  $$
+  \text{ES}_\alpha = \mathbb{E}[X \mid X \leq \text{VaR}_\alpha]
+  $$
+
+- **Historical Simulation**: Non-parametric method in `hybrid_model.py` for extreme tails, involving bootstrap resampling from the empirical distribution of historical returns.
 
 #### Testing and Robustness
-- **Anomaly Injection**: Synthetic outliers added via mixture models (e.g., 5-20% contamination with extreme values from Cauchy distribution, PDF: \( f(x) = \frac{1}{\pi (1 + x^2)} \)).
-- **Temporal Analysis**: Rolling window fitting and testing across market regimes (calm/volatility via standard deviation thresholds: \(\sigma > 2 \times\) median \(\sigma\)).
-- **Monte Carlo Simulation**: Synthetic sample generation from VAE latent space for scenario analysis and stress testing, with \(N = 10,000\) samples.
+- **Anomaly Injection**: Synthetic outliers are added via mixture models, e.g., 5-20% contamination with values from the Cauchy distribution (PDF):
 
-These algorithms are standard in statistics (e.g., from "The Elements of Statistical Learning" by Hastie et al.) and finance (e.g., VaR from Basel accords), implemented with NumPy, SciPy, and PyTorch for accuracy and efficiency. Equations are derived from core theory, with code approximations for practicality (e.g., MSE for NLL assuming unit variance).
+  $$
+  f(x) = \frac{1}{\pi (1 + x^2)}
+  $$
+
+  to simulate heavy-tailed anomalies.
+
+- **Temporal Analysis**: Uses rolling windows for fitting and testing across market regimes, classifying volatility with thresholds like \(\sigma > 2 \times \text{median}(\sigma)\), where \(\sigma\) is the rolling standard deviation.
+
+- **Monte Carlo Simulation**: Generates \(N = 10,000\) synthetic samples from the VAE latent space for scenario analysis and stress testing, approximating integrals via sampling.
+
+These algorithms are standard in statistics (e.g., from "The Elements of Statistical Learning" by Hastie et al.) and finance (e.g., VaR from Basel accords), implemented with NumPy, SciPy, and PyTorch for accuracy and efficiency. Equations are derived from core theory, with code approximations for practicality (e.g., MSE proxy for NLL assuming unit variance). For full derivations, refer to the cited literature.
 
 ### VAE Architecture
 Standard VAE: Encoder (Linear-ReLU layers to mu/logvar), reparameterization, decoder. Variants:
@@ -210,5 +254,4 @@ MIT License.
 
 ## Acknowledgments
 Built on PyTorch, SciPy, yfinance.
-
 
