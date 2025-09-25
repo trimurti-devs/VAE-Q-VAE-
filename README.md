@@ -19,7 +19,7 @@ This project implements and evaluates multiple VAE variants, discusses their **s
 ---
 
 ## Repository Structure
-
+```
 ├── Core VAE Implementations
 │ ├── optimized_vae.py
 │ ├── enhanced_vae.py
@@ -44,7 +44,7 @@ This project implements and evaluates multiple VAE variants, discusses their **s
 │ └── generate_synthetic_samples_all_tickers.py
 │
 └── outputs/
-
+```
 
 ---
 
@@ -255,4 +255,5 @@ MIT License
 Acknowledgments
 
 Built on PyTorch, SciPy, and yfinance. Inspired by research in generative modeling, risk management, and quantum machine learning.
+
 
