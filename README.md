@@ -236,5 +236,21 @@ Used in hybrid models: Resample from empirical distribution for extreme tails.
 ```bash
 pip install -r requirements.txt
 
+---
+Usage
+python optimized_vae.py         # Train VAE and generate samples
+python final_comparison.py      # Evaluate all models
 
+Outputs will be saved in outputs/ as .png, .npy, and .csv
 
+Contributing
+
+Contributions are welcome! Please open issues or PRs.
+
+License
+
+MIT License
+
+Acknowledgments
+
+Built on PyTorch, SciPy, and yfinance. Inspired by research in generative modeling, risk management, and quantum machine learning.
